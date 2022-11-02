@@ -22,8 +22,15 @@ RUN sed -i "s/group = www-data/group = '${USER}'/g" /usr/local/etc/php-fpm.d/www
 RUN echo "php_admin_flag[log_errors] = on" >> /usr/local/etc/php-fpm.d/www.conf
 
 # Installing php extensions
-RUN apk update && apk upgrade
-RUN docker-php-ext-install pdo pdo_mysql bcmath
+# RUN apk update && apk upgrade
+# RUN docker-php-ext-install pdo pdo_mysql bcmath exif pcntl
+
+RUN apk add --update \
+    freetype-dev \
+    libjpeg-turbo-dev \
+    libpng-dev \
+    && docker-php-ext-configure gd --with-jpeg --with-freetype \
+    && docker-php-ext-install -j$(nproc) gd  pdo pdo_mysql bcmath exif pcntl
 
 # Installing redis extension
 RUN mkdir -p /usr/src/php/ext/redis \
