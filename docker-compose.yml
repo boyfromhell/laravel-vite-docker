@@ -3,8 +3,9 @@ version: '3'
 networks:
   laravel:
 
+
 services:
-  nginx:
+  site:
     build:
       context: ./docker
       dockerfile: nginx.dockerfile
@@ -17,7 +18,7 @@ services:
     ports:
       - 8000:8000
     volumes:
-      - ./src:/var/www/html
+      - ./:/var/www/html
       - .env:/var/www/html/.env
     depends_on:
       - php
@@ -41,8 +42,10 @@ services:
     container_name: php
     ports:
       - ":9000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
-      - ./src:/var/www/html
+      - ./:/var/www/html
       - .env:/var/www/html/.env
     networks:
       - laravel
@@ -65,7 +68,7 @@ services:
       - ./docker/mysql:/var/lib/mysql
     networks:
       - laravel
-    
+
   redis:
     image: redis:alpine
     container_name: redis
@@ -85,12 +88,12 @@ services:
         - USER=${USER:-laravel}
     container_name: laravel-cron
     volumes:
-      - ./src:/var/www/html
+      - ./:/var/www/html
       - .env:/var/www/html/.env
     depends_on:
       - mysql
     working_dir: /var/www/html
-    entrypoint: ['php', '/var/www/html/artisan', 'schedule:work']
+    entrypoint: [ 'php', '/var/www/html/artisan', 'schedule:work' ]
     networks:
       - laravel
 
@@ -104,19 +107,19 @@ services:
         - USER=${USER:-laravel}
     container_name: laravel-queue
     volumes:
-      - ./src:/var/www/html
+      - ./:/var/www/html
       - .env:/var/www/html/.env
     depends_on:
       - mysql
     working_dir: /var/www/html
-    entrypoint: ['php', '/var/www/html/artisan', 'queue:work']
+    entrypoint: [ 'php', '/var/www/html/artisan', 'queue:work' ]
     networks:
       - laravel
 
   mailhog:
     image: mailhog/mailhog:latest
     container_name: mailhog
-    logging: 
+    logging:
       driver: 'none'
     ports:
       - 1025:1025
@@ -150,17 +153,17 @@ services:
         - USER=${USER:-laravel}
     container_name: laravel-migrate-seed
     volumes:
-      - ./src:/var/www/html
+      - ./:/var/www/html
       - .env:/var/www/html/.env
     depends_on:
       - mysql
-    profiles: ["migrate-seed"]
+    profiles: [ "migrate-seed" ]
     working_dir: /var/www/html
-    entrypoint: ["/bin/sh","-c"]
+    entrypoint: [ "/bin/sh", "-c" ]
     command:
-    - |
-      php artisan migrate
-      php artisan db:seed
+      - |
+        php artisan migrate
+        php artisan db:seed
     networks:
       - laravel
 
@@ -174,14 +177,14 @@ services:
         - USER=${USER:-laravel}
     container_name: composer
     volumes:
-      - ./src:/var/www/html
+      - ./:/var/www/html
       - .env:/var/www/html/.env
     working_dir: /var/www/html
     depends_on:
       - php
     user: ${USER:-laravel} #system user
-    profiles: ["composer"]
-    entrypoint: ['composer', '--ignore-platform-reqs']
+    profiles: [ "composer" ]
+    entrypoint: [ 'composer', '--ignore-platform-reqs' ]
     networks:
       - laravel
 
@@ -195,13 +198,13 @@ services:
         - USER=${USER:-laravel}
     container_name: artisan
     volumes:
-      - ./src:/var/www/html
+      - ./:/var/www/html
       - .env:/var/www/html/.env
     depends_on:
       - mysql
     working_dir: /var/www/html
-    profiles: ["artisan"]
-    entrypoint: ['php', '/var/www/html/artisan']
+    profiles: [ "artisan" ]
+    entrypoint: [ 'php', '/var/www/html/artisan' ]
     networks:
       - laravel
 
@@ -209,14 +212,16 @@ services:
     image: node:alpine
     container_name: npm
     volumes:
-      - ./src:/var/www/html
+      - ./:/var/www/html
       - .env:/var/www/html/.env
     ports:
       - 3000:3000
       - 3001:3001
+    expose:
+      - 3000:3000
+      - 3001:3001
     working_dir: /var/www/html
-    profiles: ["npm"]
-    entrypoint: ['npm']
+    profiles: [ "npm" ]
+    entrypoint: [ 'npm' ]
     networks:
       - laravel
-
